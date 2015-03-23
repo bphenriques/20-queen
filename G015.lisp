@@ -5,6 +5,7 @@
 ;(resolve-problema (make-array '(4 4) :initial-contents '((t nil nil nil) (nil nil t nil) (nil t nil nil) (nil nil nil t))) "a*")
 ;(make-array '(4 4) :initial-contents '((t nil nil nil) (nil nil t nil) (nil t nil nil) (nil nil nil t))
 
+
 ;============================================
 ;================ QUEEN STATE ===============
 ;============================================
@@ -31,7 +32,7 @@
 		;(print '@@@@@@@@@@@@@@BEFORE)
 		;(print state)
 
-		(setf (queens-state-positions state) (append positions (list (list lin col))))
+		(setf (queens-state-positions state) (append positions (list (create-position lin col))))
 		(setf (aref (queens-state-ocupied-lines state) lin) t)
 		(setf (aref (queens-state-ocupied-columns state) col) t)
 		(incf (queens-state-number-placed state))
@@ -72,6 +73,14 @@
 (defun position-y (pos)
 	(second pos))
 
+(defun create-position (lin col)
+	(list lin col))
+
+(defun equal-positions (pos1 pos2)
+	(and (= (position-x pos1) 
+			(position-x pos2))
+		 (= (position-y pos1) 
+		    (position-y pos2))))
 
 (defun convert-board-to-queens-state(matrix)
 	(let* ((size (array-dimension matrix 0))
@@ -124,46 +133,55 @@
 	1)
 
 
-(defun transpose (x) 
-	(let ((result (list))) 
-		(dolist (p x) 
-			(setf result (append result (list (cons (car (cdr p)) (car p)))))) 
+(defun gen-rotated-positions (pos size)
+	(let ((result (list pos))
+		  (copy-pos (create-position (position-x pos) (position-y pos))))
+		(dotimes (n 3)
+			(setf copy-pos (rotate-position-left! copy-pos size))
+			(setf result (append result (list copy-pos))))
 		result))
 
+;(defun rotated-positions?(pos1 pos2 size)
+;	(let* ((rotated nil))
+	;	(if (equal pos1 pos2)
+	;		t
+	;		(dotimes (n 3)
+	;			(setf rotated (rotate-position-left pos2 size))
+	;			(when (equal pos1 rotated)
+	;				(return-from rotated-positions? t)))))
+	;nil)
+
+(defun rotate-position-left! (pos board-size)
+	(let ((lin (position-x pos))
+		  (col (position-y pos)))
+		(setf pos (create-position (- (- board-size 1) col) lin))))
 
 
-
-(defun rotate-left (x board-size) 
-	(let ((result (list))
-		  (pivot (- board-size 1))) 
-		; tranpose and flip horizontaly the line
-		(dolist (p x)
-			(let ((lin (position-x p))
-				  (col (position-y p)))
-			(setf result (append result (list (cons (- pivot col) lin))))))
-		result))
+(defun find-pos-lst(pos lst)
+	(cond ((null lst) nil)
+		  ((equal-positions pos (car lst)) t)
+		   (t (find-pos-lst pos (rest lst)))))
 
 (defun operator (state)
 	(let* ((size (queens-state-board-size state))
 		   (sucessors (list))
-		   (positions (list)))
+		   (rotated-positions (list)))
 
 		;(print '@@@@-FROM-THIS-STATE)
 		;(print state)
 
 		; only generate half of the lines*col combinations because the results are simmetrical
 		(dotimes (l size)
-			(if (free-line? state l)
-				(dotimes (c size)
+			(when (free-line? state l)
+				  (dotimes (c size)
 					;(print 'here2)
 					;(print state)
 					;(format t "lin ~D  col ~D --- v: ~D ~%" l c (< c (- size l)))
-					(when (and (free-column? state c) (free-diagonal? state l c) )
-						  (progn
-						  		(setf positions nil)
-						  		(setf sucessors (append sucessors (list (result-of-move state l c)))))))))
-				;(print 'skipping-line)))
-				
+					(when (and (free-column? state c) (free-diagonal? state l c) (not (find-pos-lst (create-position l c) rotated-positions)))
+						  (progn 
+						  		(setf rotated-positions (append rotated-positions (gen-rotated-positions (create-position l c) size))) 
+						 	 	(setf sucessors (append sucessors (list (result-of-move state l c)))))))))
+				;(print 'skipping-line)))				
 
 
 		;(print 'generated)
