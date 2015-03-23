@@ -109,7 +109,7 @@
 		(dolist (p x)
 			(let ((lin (car p))
 				  (col (car (cdr p))))
-			(setf result (append result (list (cons (- pivot col) lin))))))
+			(setf result (append result (list (list (- pivot col) lin))))))
 		result))
 
 (defun operator (state)
