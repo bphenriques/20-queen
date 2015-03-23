@@ -19,12 +19,19 @@
 					 	:ocupied-lines (copy-array (queens-state-ocupied-lines state))
 					 	:ocupied-columns (copy-array (queens-state-ocupied-columns state))))
 
+(defun empty-queens-state (size)
+	(make-queens-state 	:board-size size 
+						:number-placed 0
+					 	:positions (list)
+					 	:ocupied-lines (make-array size)
+					 	:ocupied-columns (make-array size)))
+
 (defun put-queen! (state lin col)
 	(let ((positions (queens-state-positions state)))
 		;(print '@@@@@@@@@@@@@@BEFORE)
 		;(print state)
 
-		(setf (queens-state-positions state) (append positions (list (cons lin col))))
+		(setf (queens-state-positions state) (append positions (list (list lin col))))
 		(setf (aref (queens-state-ocupied-lines state) lin) t)
 		(setf (aref (queens-state-ocupied-columns state) col) t)
 		(incf (queens-state-number-placed state))
@@ -48,20 +55,41 @@
 
 (defun free-diagonal? (state line column)
 	;(format t "free-diagonal? ~D ~D~%" line column)
-	(let ((result t))
 		(dolist (pos (queens-state-positions state))
-			(let ((l (car pos))
-				  (c (cdr pos)))
-
+			(let ((l (first pos))
+				  (c (second pos)))
 				;(format t "|dif lines| = ~D  == |dif cols| = ~D" (abs (- l line)) (abs (- c column)))
 				(when (= (abs (- l line))
 			 	 	     (abs (- c column)))
-			 	 	  (progn
-	 	 			 	(setf result nil) 
-	 	 			 	(return)))))
+			 	 	  (return-from free-diagonal? nil))))
 			 	 	;(format t "trying next position"))))
 		;(print result)
-		result))
+		t)
+
+(defun position-x (pos)
+	(first pos))
+
+(defun position-y (pos)
+	(second pos))
+
+
+(defun convert-board-to-queens-state(matrix)
+	(let* ((size (array-dimension matrix 0))
+		   (state (empty-queens-state size)))
+		(dotimes (line size)
+			(dotimes (column size)
+				(when (eq (aref matrix line column) t)
+					(put-queen! state line column)
+					(return))))
+		state))
+
+(defun convert-queens-state-to-board(queen-state)
+	(let* ((positions (queens-state-positions queen-state))
+		   (size (queens-state-board-size queen-state))
+		   (result-matrix (make-array (list size size))))
+		(dolist (pos positions)
+			(setf (aref result-matrix (position-x pos) (position-y pos)) t))
+		result-matrix))
 
 ; Name: resolve-problema
 ; Arguments: initial-state, strategy
@@ -102,14 +130,17 @@
 			(setf result (append result (list (cons (car (cdr p)) (car p)))))) 
 		result))
 
+
+
+
 (defun rotate-left (x board-size) 
 	(let ((result (list))
 		  (pivot (- board-size 1))) 
 		; tranpose and flip horizontaly the line
 		(dolist (p x)
-			(let ((lin (car p))
-				  (col (car (cdr p))))
-			(setf result (append result (list (list (- pivot col) lin))))))
+			(let ((lin (position-x p))
+				  (col (position-y p)))
+			(setf result (append result (list (cons (- pivot col) lin))))))
 		result))
 
 (defun operator (state)
@@ -129,7 +160,7 @@
 					;(format t "lin ~D  col ~D --- v: ~D ~%" l c (< c (- size l)))
 					(when (and (free-column? state c) (free-diagonal? state l c) )
 						  (progn
-						  		(setf positions nil) 
+						  		(setf positions nil)
 						  		(setf sucessors (append sucessors (list (result-of-move state l c)))))))))
 				;(print 'skipping-line)))
 				
@@ -144,41 +175,6 @@
 (defun free? (state line column)
 	(and (free-line? state line) (free-column? state column) (free-diagonal? state line column)))
 
-; =================================
-; ======== CONVERTERS =============
-; =================================
 
-; Name: compact-matrix
-; Arguments: ainitial-state, strategy
-; Return: Bi-dimensional array with the queens position; nil if there is no solution
-; Note: 
-(defun convert-board-to-queens-state(matrix)
-	(let* ((size (array-dimension matrix 0))
-		   (positions (list))
-		   (placed-queens 0)
-		   (oc-lines (make-array size))
-		   (oc-cols (make-array size)))
-
-		(dotimes (line size)
-			(dotimes (column size)
-				(when (eq (aref matrix line column) t)
-					(cons (cons line column) positions)
-					(incf placed-queens)
-					(setf (aref oc-lines line) t)
-					(setf (aref oc-cols column) t)
-					(return))))
-		(make-queens-state :board-size size 
-						   :number-placed placed-queens
-					 	   :positions positions
-					 	   :ocupied-lines oc-lines
-					 	   :ocupied-columns oc-cols)))
-
-(defun convert-queens-state-to-board(queen-state)
-	(let* ((positions (queens-state-positions queen-state))
-		   (size (queens-state-board-size queen-state))
-		   (result-matrix (make-array (list size size))))
-		(dolist (pos positions)
-			(setf (aref result-matrix (car pos) (cdr pos)) t))
-		result-matrix))
 
 
