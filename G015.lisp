@@ -55,7 +55,7 @@
 
 				;(format t "|dif lines| = ~D  == |dif cols| = ~D" (abs (- l line)) (abs (- c column)))
 				(when (= (abs (- l line))
-			 	 	   (abs (- c column)))
+			 	 	     (abs (- c column)))
 			 	 	  (progn
 	 	 			 	(setf result nil) 
 	 	 			 	(return)))))
@@ -96,28 +96,50 @@
 	1)
 
 
+(defun transpose (x) 
+	(let ((result (list))) 
+		(dolist (p x) 
+			(setf result (append result (list (cons (car (cdr p)) (car p)))))) 
+		result))
+
+(defun rotate-left (x board-size) 
+	(let ((result (list))
+		  (pivot (- board-size 1))) 
+		; tranpose and flip horizontaly the line
+		(dolist (p x)
+			(let ((lin (car p))
+				  (col (car (cdr p))))
+			(setf result (append result (list (cons (- pivot col) lin))))))
+		result))
+
 (defun operator (state)
 	(let* ((size (queens-state-board-size state))
-		   (sucessors (list)))
+		   (sucessors (list))
+		   (positions (list)))
 
 		;(print '@@@@-FROM-THIS-STATE)
 		;(print state)
+
+		; only generate half of the lines*col combinations because the results are simmetrical
 		(dotimes (l size)
 			(if (free-line? state l)
 				(dotimes (c size)
 					;(print 'here2)
 					;(print state)
-					(when (and (free-column? state c) (free-diagonal? state l c))
-						  (setf sucessors (cons (result-of-move state l c) sucessors))))))
+					;(format t "lin ~D  col ~D --- v: ~D ~%" l c (< c (- size l)))
+					(when (and (free-column? state c) (free-diagonal? state l c) )
+						  (progn
+						  		(setf positions nil) 
+						  		(setf sucessors (append sucessors (list (result-of-move state l c)))))))))
 				;(print 'skipping-line)))
 				
+
 
 		;(print 'generated)
 		;(print sucessors)
 		;(print (length sucessors))
 		
 		sucessors))
-	
 
 (defun free? (state line column)
 	(and (free-line? state line) (free-column? state column) (free-diagonal? state line column)))
@@ -158,3 +180,5 @@
 		(dolist (pos positions)
 			(setf (aref result-matrix (car pos) (cdr pos)) t))
 		result-matrix))
+
+
