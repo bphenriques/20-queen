@@ -134,12 +134,16 @@
 
 
 (defun gen-rotated-positions (pos size)
+	(labels ((rotate-position-left! (pos board-size)
+	(let ((lin (position-x pos))
+		  (col (position-y pos)))
+		(setf pos (create-position (- (- board-size 1) col) lin)))))
 	(let ((result (list pos))
 		  (copy-pos (create-position (position-x pos) (position-y pos))))
 		(dotimes (n 3)
 			(setf copy-pos (rotate-position-left! copy-pos size))
 			(setf result (append result (list copy-pos))))
-		result))
+		result)))
 
 ;(defun rotated-positions?(pos1 pos2 size)
 ;	(let* ((rotated nil))
@@ -151,16 +155,8 @@
 	;				(return-from rotated-positions? t)))))
 	;nil)
 
-(defun rotate-position-left! (pos board-size)
-	(let ((lin (position-x pos))
-		  (col (position-y pos)))
-		(setf pos (create-position (- (- board-size 1) col) lin))))
 
 
-(defun find-pos-lst(pos lst)
-	(cond ((null lst) nil)
-		  ((equal-positions pos (car lst)) t)
-		   (t (find-pos-lst pos (rest lst)))))
 
 (defun operator (state)
 	(let* ((size (queens-state-board-size state))
@@ -177,7 +173,7 @@
 					;(print 'here2)
 					;(print state)
 					;(format t "lin ~D  col ~D --- v: ~D ~%" l c (< c (- size l)))
-					(when (and (free-column? state c) (free-diagonal? state l c) (not (find-pos-lst (create-position l c) rotated-positions)))
+					(when (and (free-column? state c) (free-diagonal? state l c) (null (member (create-position l c) rotated-positions :test #'equal-positions)))
 						  (progn 
 						  		(setf rotated-positions (append rotated-positions (gen-rotated-positions (create-position l c) size))) 
 						 	 	(setf sucessors (append sucessors (list (result-of-move state l c)))))))))
