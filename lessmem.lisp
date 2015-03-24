@@ -1,11 +1,11 @@
 ;Bruno Alexandre Pires Henriques
 ;72913
 
-;[16]> (time (resolve-problema (make-array '(6 6)) "a*"))
-;Real time: 3.086253 sec.
-;Run time: 3.075952 sec.
-;Space: 108700776 Bytes
-;GC: 94, GC time: 0.547168 sec.
+;(time (resolve-problema (make-array '(6 6)) "a*"))
+;Real time: 3.192726 sec.
+;Run time: 3.185578 sec.
+;Space: 115946888 Bytes
+;GC: 115, GC time: 0.631295 sec.
 ;#2A((NIL T NIL NIL NIL NIL)
 ;    (NIL NIL NIL T NIL NIL)
 ;    (NIL NIL NIL NIL NIL T)
@@ -13,57 +13,42 @@
 ;    (NIL NIL T NIL NIL NIL)
 ;    (NIL NIL NIL NIL T NIL))
 
+
 ;============================================
 ;================ QUEEN STATE ===============
 ;============================================
 
 
-(defstruct queens-state board-size number-placed positions ocupied-lines ocupied-columns)
-
-(defun make-copy-queens-state (state)
-	(make-queens-state 	:board-size (queens-state-board-size state) 
-						:number-placed (queens-state-number-placed state)
-					 	:positions (copy-list (queens-state-positions state))
-					 	:ocupied-lines (copy-array (queens-state-ocupied-lines state))
-					 	:ocupied-columns (copy-array (queens-state-ocupied-columns state))))
-
-(defun empty-queens-state (size)
-	(make-queens-state 	:board-size size 
-						:number-placed 0
-					 	:positions (list)
-					 	:ocupied-lines (make-array size)
-					 	:ocupied-columns (make-array size)))
+(defun 2d-array-to-list (array)
+  (map 'list (lambda (x) x) array))
 
 (defun put-queen! (state lin col)
-	(let ((positions (queens-state-positions state)))
-		;(print '@@@@@@@@@@@@@@BEFORE)
-		;(print state)
-
-		(setf (queens-state-positions state) (append positions (list (create-position lin col))))
-		(setf (svref (queens-state-ocupied-lines state) lin) t)
-		(setf (svref (queens-state-ocupied-columns state) col) t)
-		(incf (queens-state-number-placed state))
-
-		;(print '@@@@@@@@@@@@@@AFTER)
-		;(print state)
-		))
+		(setf (svref state lin) col))
 
 (defun result-of-move (state lin pos)
-	(let ((state-copy (make-copy-queens-state state)))
+	(let ((state-copy (copy-array state)))
 			(put-queen! state-copy lin pos)
 			state-copy))
 
 (defun free-line? (state line)
 	;(format t "free-line? ~D~%" line) 
-	(null (svref (queens-state-ocupied-lines state) line)))
+	(null (svref state line)))
 
-(defun free-column? (state column)
-	;(format t "free-column? ~D" column)
-	(null (svref (queens-state-ocupied-columns state) column)))
+(defun free-column? (lst-pos column)
+	(null (member column lst-pos :key #'position-y)))
 
-(defun free-diagonal? (state line column)
+; PROBLEMA HERE
+(defun gen-list-positions(state)
+	(let ((result (list)))
+		(dotimes (l (length state))
+			(let ((col (svref state l)))
+				(when (not (null col))
+					(setf result (append result (list (list l col)))))))
+		result))
+
+(defun free-diagonal? (lst-pos line column)
 	;(format t "free-diagonal? ~D ~D~%" line column)
-		(dolist (pos (queens-state-positions state))
+		(dolist (pos lst-pos)
 			(let ((l (first pos))
 				  (c (second pos)))
 				;(format t "|dif lines| = ~D  == |dif cols| = ~D" (abs (- l line)) (abs (- c column)))
@@ -73,25 +58,12 @@
 			 	 	;(format t "trying next position"))))
 		;(print result)
 		t)
-
-(defun position-x (pos)
-	(first pos))
-
-(defun position-y (pos)
-	(second pos))
-
-(defun create-position (lin col)
-	(list lin col))
-
-(defun equal-positions (pos1 pos2)
-	(and (= (position-x pos1) 
-			(position-x pos2))
-		 (= (position-y pos1) 
-		    (position-y pos2))))
+			 	 	;(format t "trying next position"))))
+		;(print result)
 
 (defun convert-board-to-queens-state(matrix)
 	(let* ((size (array-dimension matrix 0))
-		   (state (empty-queens-state size)))
+		   (state (make-array size)))
 		(dotimes (line size)
 			(dotimes (column size)
 				(when (eq (aref matrix line column) t)
@@ -99,12 +71,12 @@
 					(return))))
 		state))
 
-(defun convert-queens-state-to-board(queen-state)
-	(let* ((positions (queens-state-positions queen-state))
-		   (size (queens-state-board-size queen-state))
+(defun convert-queens-state-to-board(state)
+	(let* ((size (array-dimension state 0))
 		   (result-matrix (make-array (list size size))))
-		(dolist (pos positions)
-			(setf (aref result-matrix (position-x pos) (position-y pos)) t))
+		(dotimes (l size)
+			(let ((col (svref state l)))
+				(setf (aref result-matrix l col) t)))
 		result-matrix))
 
 ; Name: resolve-problema
@@ -132,8 +104,17 @@
 
 		transformed-result))
 		
+
+
+
+; WAAAAS HEEEREEEE
+
+(defun count-queens (state)
+	(length (filtra #'(lambda (x) (not (null x))) (2d-array-to-list state))))
+
 (defun objective? (state)
-	(= (queens-state-number-placed state) (queens-state-board-size state)))
+	(= (length state) (count-queens state)))
+
 
 (defun heuristic (state)
 	(setf state state)
@@ -145,7 +126,6 @@
 		(let ((lin (position-x pos))
 		  	  (col (position-y pos)))
 				(setf pos (create-position (- (- board-size 1) col) lin)))))
-	
 	(let ((result (list pos))
 		  (copy-pos (create-position (position-x pos) (position-y pos))))
 		(dotimes (n 3)
@@ -167,11 +147,27 @@
 ;> (member-if #>oddp '( 2 3 4))
 ; (3 4) 
 
+(defun position-x (pos)
+	(first pos))
+
+(defun position-y (pos)
+	(second pos))
+
+(defun create-position (lin col)
+	(list lin col))
+
+(defun equal-positions (pos1 pos2)
+	(and (= (position-x pos1) 
+			(position-x pos2))
+		 (= (position-y pos1) 
+		    (position-y pos2))))
+
 
 (defun operator (state)
-	(let* ((size (queens-state-board-size state))
+	(let* ((size (length state))
 		   (sucessors (list))
-		   (rotated-positions (list)))
+		   (rotated-positions (list))
+		   (lst-pos (gen-list-positions state)))
 
 		;(print '@@@@-FROM-THIS-STATE)
 		;(print state)
@@ -183,7 +179,7 @@
 					;(print 'here2)
 					;(print state)
 					;(format t "lin ~D  col ~D --- v: ~D ~%" l c (< c (- size l)))
-					(when (and (free-column? state c) (free-diagonal? state l c) (null (member (create-position l c) rotated-positions :test #'equal-positions)))
+					(when (and (free-column? lst-pos c) (free-diagonal? lst-pos l c) (null (member (create-position l c) rotated-positions :test #'equal-positions)))
 						  (progn 
 						  		(setf rotated-positions (append rotated-positions (gen-rotated-positions (create-position l c) size))) 
 						 	 	(setf sucessors (append sucessors (list (result-of-move state l c)))))))))
