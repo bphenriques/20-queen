@@ -49,9 +49,6 @@
 		 (free-column? state c)
 		 (free-diagonal? state l c)))
 
-(defun objective? (state)
-	(= (queens-state-number-placed state) (array-dimension (queens-state-positions state) 0)))
-
 (defun convert-board-to-queens-state(matrix)
 	(let* ((size (array-dimension matrix 0))
 		   (state (empty-queens-state size)))
@@ -69,6 +66,38 @@
 		(dotimes (l size)
 			(setf (aref result-matrix l (svref positions l)) t))
 		result-matrix))
+
+
+;=================================================
+;==============   POSITIONS ======================
+;=================================================
+
+(defun equal-positions (pos1 pos2)
+	(equal pos1 pos2))
+
+(defun gen-rotated-positions (pos size)
+	(labels ((rotate-position-left! (pos size)
+		(let ((lin (position-x pos))
+		  	  (col (position-y pos)))
+				(setf pos (create-position (- (- size 1) col) lin)))))
+
+	(let ((result (cons pos nil))
+		  (copy-pos (create-position (position-x pos) (position-y pos))))
+		(dotimes (n 3)
+			(setf copy-pos (rotate-position-left! copy-pos size))
+			(setf result (cons copy-pos result)))
+		result)))
+
+
+(defun position-x (pos)
+	(car pos))
+
+(defun position-y (pos)
+	(cdr pos))
+
+(defun create-position (lin col)
+	(cons lin col))
+
 
 ; Name: resolve-problema
 ; Arguments: initial-state, strategy
@@ -88,56 +117,11 @@
 			  (setf transformed-result (convert-queens-state-to-board result-state)))
 
 		transformed-result))
-		
-;pri
-;previlegia o preenchimento das primeiras linhas
-(defun heuristic (state)
-  (let* ((heuristic 0)
-         (positions (queens-state-positions state))
-         (size (array-dimension positions 0))
-         (n-free 0))
-    (dotimes (l size)
-    	(let ((n-conflits 0))
-	      	(when (null (svref positions l))
-	        	  (incf n-free)
-	          	(dotimes (c size)
-	            	(when (not (free? state l c))
-	                	  (incf n-conflits))))
-
-	      	;give more weight to sum of conflicts nearest to first line (beggining of the processing)
-      		(setf heuristic (+ heuristic (* n-free n-conflits)))))
-    ;give more weight globally to the board when it is more free
-    (* heuristic n-free)))
 
 
 
-(defun equal-positions (pos1 pos2)
-	(and (= (position-x pos1) 
-			(position-x pos2))
-		 (= (position-y pos1) 
-		    (position-y pos2))))
 
-(defun gen-rotated-positions (pos size)
-	(labels ((rotate-position-left! (pos size)
-		(let ((lin (position-x pos))
-		  	  (col (position-y pos)))
-				(setf pos (create-position (- (- size 1) col) lin)))))
 
-	(let ((result (list pos))
-		  (copy-pos (create-position (position-x pos) (position-y pos))))
-		(dotimes (n 3)
-			(setf copy-pos (rotate-position-left! copy-pos size))
-			(setf result (append result (list copy-pos))))
-		result)))
-
-(defun position-x (pos)
-	(first pos))
-
-(defun position-y (pos)
-	(second pos))
-
-(defun create-position (lin col)
-	(list lin col))
 
 (defun operator (state)
 	(let* ((size (array-dimension (queens-state-positions state) 0))
@@ -154,3 +138,26 @@
 						  		(setf rotated-positions (append rotated-positions (gen-rotated-positions (create-position l c) size)))
 						 	 	(setf sucessors (append sucessors (list (result-of-move state l c)))))))
 				  (return-from operator sucessors)))))
+
+
+(defun objective? (state)
+	(= (queens-state-number-placed state) (array-dimension (queens-state-positions state) 0)))
+		
+;pri
+;previlegia o preenchimento das primeiras linhas
+(defun heuristic (state)
+  (let* ((heuristic 0)
+         (positions (queens-state-positions state))
+         (size (array-dimension positions 0))
+         (n-free 0))
+    (dotimes (l size)
+    	(let ((n-conflits 0))
+	      	(when (null (svref positions l))
+	        	  (incf n-free)
+	          	(dotimes (c size)
+	            	(when (not (free? state l c))
+	                	  (incf n-conflits))))
+	      	;give more weight to sum of conflicts nearest to first line (beggining of the processing)
+      		(setf heuristic (+ heuristic (* n-free n-conflits)))))
+    ;give more weight globally to the board when it is more free
+    (* heuristic n-free)))
