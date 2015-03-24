@@ -27,8 +27,8 @@
 	(null (svref state line)))
 
 (defun free-column? (lst-pos column)
+	;(format t "free-column? ~D~%" column) 	
 	(null (member column lst-pos :key #'position-y)))
-
 
 (defun gen-list-positions(state)
 	(let ((result (list)))
@@ -37,7 +37,6 @@
 				(when (not (null col))
 					(setf result (append result (list (list l col)))))))
 		result))
-
 
 (defun free-diagonal? (lst-pos line column)
 	;(format t "free-diagonal? ~D ~D~%" line column)
@@ -96,11 +95,7 @@
 			  (setf transformed-result (convert-queens-state-to-board result-state)))
 
 		transformed-result))
-		
-
-
-
-; WAAAAS HEEEREEEE
+	
 
 (defun count-queens (state)
 	(length (filtra #'(lambda (x) (not (null x))) (2d-array-to-list state))))
@@ -126,19 +121,6 @@
 			(setf result (append result (list copy-pos))))
 		result)))
 
-;(defun rotated-positions?(pos1 pos2 size)
-;	(let* ((rotated nil))
-	;	(if (equal pos1 pos2)
-	;		t
-	;		(dotimes (n 3)
-	;			(setf rotated (rotate-position-left pos2 size))
-	;			(when (equal pos1 rotated)
-	;				(return-from rotated-positions? t)))))
-	;nil)
-
-; USEFUL snippets
-;> (member-if #>oddp '( 2 3 4))
-; (3 4) 
 
 (defun position-x (pos)
 	(first pos))
@@ -173,17 +155,12 @@
 					;(print state)
 					;(format t "lin ~D  col ~D --- v: ~D ~%" l c (< c (- size l)))
 					(when (and (free-column? lst-pos c) (free-diagonal? lst-pos l c) (null (member (create-position l c) rotated-positions :test #'equal-positions)))
-						  (progn 
+						  (progn
+						  		;(print 'here) 
 						  		(setf rotated-positions (append rotated-positions (gen-rotated-positions (create-position l c) size))) 
-						 	 	(setf sucessors (append sucessors (list (result-of-move state l c)))))))))
-				;(print 'skipping-line)))				
-
-
-		;(print 'generated)
-		;(print sucessors)
-		;(print (length sucessors))
-		
-		sucessors))
+						 	 	(setf sucessors (append sucessors (list (result-of-move state l c)))))))
+					
+					(return-from operator sucessors)))))
 
 (defun free? (state line column)
 	(and (free-line? state line) (free-column? state column) (free-diagonal? state line column)))
