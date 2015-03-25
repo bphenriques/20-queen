@@ -5,7 +5,6 @@
 ;================ QUEEN STATE ===============
 ;============================================
 
-
 (defstruct queens-state number-placed positions ocupied-columns)
 
 (defun empty-queens-state (size)
@@ -77,23 +76,17 @@
 
 (defun gen-rotated-positions (pos size)
 	(labels ((rotate-position-left! (pos size)
-		(let ((lin (position-x pos))
-		  	  (col (position-y pos)))
+		(let ((lin (car pos))
+		  	  (col (cdr pos)))
 				(setf pos (create-position (- (- size 1) col) lin)))))
 
 	(let ((result (cons pos nil))
-		  (copy-pos (create-position (position-x pos) (position-y pos))))
+		  (copy-pos (create-position (car pos) (cdr pos))))
 		(dotimes (n 3)
 			(setf copy-pos (rotate-position-left! copy-pos size))
 			(setf result (cons copy-pos result)))
 		result)))
 
-
-(defun position-x (pos)
-	(car pos))
-
-(defun position-y (pos)
-	(cdr pos))
 
 (defun create-position (lin col)
 	(cons lin col))
@@ -117,11 +110,6 @@
 			  (setf transformed-result (convert-queens-state-to-board result-state)))
 
 		transformed-result))
-
-
-
-
-
 
 (defun operator (state)
 	(let* ((size (array-dimension (queens-state-positions state) 0))
