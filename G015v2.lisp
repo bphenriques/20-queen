@@ -1,15 +1,58 @@
-;Bruno Alexandre Pires Henriques
-;72913
 
-;============================================
-;================ QUEEN STATE ===============
-;============================================
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Bruno Alexandre Pires Henriques
+; 72913 - Instituto Superior Tecnico
+; Procura e Planeamento 2014/2015
+; 20-Queens problem
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+
+;Name: resolve-problema
+;Arguments: square-matrix representing the board and the strategy (a*, ida*, profundidade (dfds), or bfs)
+;Return: square-amtrix with the solution to the problem
+;Side-effects: None
+(defun resolve-problema (initial-state strategy)
+	(let* ((initial-state-transformed (convert-board-to-queens-state initial-state))
+		   (result-state nil)
+		   (transformed-result nil))
+
+		(setf result-state (procura (cria-problema initial-state-transformed 
+													(list #'operator) 
+												   	:objectivo? #'objective? 
+												   	:heuristica #'heuristic) 
+												   	strategy))		
+		;(print result-state)
+		(setf result-state (first (last (nth (- (length result-state) 4) result-state))))
+		(when (not (null result-state))
+			  (setf transformed-result (convert-queens-state-to-board result-state)))
+		transformed-result))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; AUXILIARY FUNCIONS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;Name: queens-state
+;Description:
+; number-placed: number of queens placed on the board
+; positions: array with n positions for each row of the board. The content
+;            represents the column in wich a queen was placed.
+; ocupied-columns: array with n positions for each column of the board. The content
+;				   is t if a queen was placed in that column. nil if not.
+;
+; Notes: The first element optimizes the objective? funcion by avoiding counting the
+;        the number of non-nil elements in the positions/ocupied-columns array
+;        The second element represents a compacted version of the board
+;        The third element optimizes the free-column? function by avoiding iterating
+;        over the positions array
+;
 (defstruct queens-state number-placed positions ocupied-columns)
 
 ;Name: empty-queens-state
 ;Arguments: size of the square board 
-;Return: empty state representing an empty board
+;Return: empty queens-state representing an empty board
 ;Side-effects: None
 (defun empty-queens-state (size)
 	(make-queens-state 	:number-placed 0
@@ -107,10 +150,10 @@
 			(setf (aref result-board-matrix r (svref positions r)) t))
 		result-board-matrix))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; OPERATORS FOR MANIPULATING POSITIONS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;=================================================
-;==============   POSITIONS ======================
-;=================================================
 
 ;Name: create-position
 ;Arguments: row and column 
@@ -121,7 +164,8 @@
 
 ;Name: generate-rotated-positions 
 ;Arguments: position and the size of the board
-;Return: a list of cons representing the positions that are rotations of the position given as argument according to the size of the board
+;Return: a list of cons representing the positions that are rotations of the position given as argument 
+;        according to the size of the board
 ;Side-effects: None
 ;
 ;Note: For example:  (gen-rotatepositions (create-position 1 0) 3)
@@ -132,7 +176,8 @@
 ;
 ; Would return ((1 . 2) (2 . 1) (1 . 0) (0 . 1))
 ;
-; It is done by doing a transpose of the position (row = col and col = row) then a simmetry in the vertical axis (row = size-of-board - 1 - row).
+; It is done by doing a transpose of the position (row = col and col = row) then a simmetry in the vertical 
+; axis (row = size-of-board - 1 - row).
 ;
 (defun generate-rotated-positions (position size)
 	(labels ((rotate-position-left! (position size)
@@ -147,24 +192,11 @@
 			(setf result (cons copy-pos result)))
 		result)))
 
-;Name: resolve-problema
-;Arguments: square-matrix representing the board and the strategy (a*, ida*, profundidade (dfds), or bfs)
-;Return: square-amtrix with the solution to the problem
-;Side-effects: None
-(defun resolve-problema (initial-state strategy)
-	(let* ((initial-state-transformed (convert-board-to-queens-state initial-state))
-		   (result-state nil)
-		   (transformed-result nil))
 
-		(setf result-state (procura (cria-problema initial-state-transformed (list #'operator) :objectivo? #'objective? :heuristica #'heuristic) strategy))
-		
-		;(print result-state)
-		(setf result-state (first (last (nth (- (length result-state) 4) result-state))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; OPERATORS FOR RESOLVE-PROBLEMA ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-		(when (not (null result-state))
-			  (setf transformed-result (convert-queens-state-to-board result-state)))
-
-		transformed-result))
 
 ;Name: operator
 ;Arguments: queens-state structure 
@@ -199,12 +231,12 @@
 ;Return: a integer representing the value of the heuristic
 ;Side-effects: None
 ;
-;Notes: Gives more weight to columns that have more free positions and less weight if the corresponding row is the last one on the board
-;which means that the chance of finding a solution is less probable. Therefore, at the end of each row, we count the number of conflicts
-;found and multiply it by the number of free-rows. 
-;The final result is the product of the weighted sum of the conflicts for each rows and the number of free rows, which represents a 
-;global measure of the board. A board with more free rows is better than another board with less free rows.
-
+; Notes: Gives more weight to columns that have more free positions and less weight if the corresponding 
+;        row is the last one on the board which means that the chance of finding a solution is less probable. 
+;        Therefore, at the end of each row, we count the number of conflicts found and multiply it by the
+;        number of free-rows. The final result is the product of the weighted sum of the conflicts for each 
+;        rows and the number of free rows, which represents a global measure of the board. A board with more
+;        free rows is better than another board with less free rows.
 (defun heuristic (state)
   (let* ((heuristic 0)
          (positions (queens-state-positions state))
