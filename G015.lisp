@@ -18,11 +18,10 @@
 		   (transformed-result nil))
 
 		(setf result-state (procura (cria-problema initial-state-transformed 
-													(list #'operator) 
+													(list #'operator)
 												   	:objectivo? #'objective? 
 												   	:heuristica #'heuristic) 
-												   	strategy))		
-		;(print result-state)
+												   	strategy))
 		(setf result-state (first (last (nth (- (length result-state) 4) result-state))))
 		(when (not (null result-state))
 			  (setf transformed-result (convert-queens-state-to-board result-state)))
