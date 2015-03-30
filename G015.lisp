@@ -1,178 +1,253 @@
-;Bruno Alexandre Pires Henriques
-;72913
 
-;[16]> (time (resolve-problema (make-array '(6 6)) "a*"))
-;Real time: 3.086253 sec.
-;Run time: 3.075952 sec.
-;Space: 108700776 Bytes
-;GC: 94, GC time: 0.547168 sec.
-;#2A((NIL T NIL NIL NIL NIL)
-;    (NIL NIL NIL T NIL NIL)
-;    (NIL NIL NIL NIL NIL T)
-;    (T NIL NIL NIL NIL NIL)
-;    (NIL NIL T NIL NIL NIL)
-;    (NIL NIL NIL NIL T NIL))
-
-;============================================
-;================ QUEEN STATE ===============
-;============================================
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Bruno Alexandre Pires Henriques
+; 72913 - Instituto Superior Tecnico
+; Procura e Planeamento 2014/2015
+; 20-Queens problem
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defstruct queens-state board-size number-placed positions ocupied-lines ocupied-columns)
 
-(defun make-copy-queens-state (state)
-	(make-queens-state 	:board-size (queens-state-board-size state) 
-						:number-placed (queens-state-number-placed state)
-					 	:positions (copy-list (queens-state-positions state))
-					 	:ocupied-lines (copy-array (queens-state-ocupied-lines state))
-					 	:ocupied-columns (copy-array (queens-state-ocupied-columns state))))
-
-(defun empty-queens-state (size)
-	(make-queens-state 	:board-size size 
-						:number-placed 0
-					 	:positions (list)
-					 	:ocupied-lines (make-array size)
-					 	:ocupied-columns (make-array size)))
-
-(defun put-queen! (state lin col)
-	(let ((positions (queens-state-positions state)))
-		;(print '@@@@@@@@@@@@@@BEFORE)
-		;(print state)
-
-		(setf (queens-state-positions state) (append positions (list (create-position lin col))))
-		(setf (svref (queens-state-ocupied-lines state) lin) t)
-		(setf (svref (queens-state-ocupied-columns state) col) t)
-		(incf (queens-state-number-placed state))
-
-		;(print '@@@@@@@@@@@@@@AFTER)
-		;(print state)
-		))
-
-(defun result-of-move (state lin pos)
-	(let ((state-copy (make-copy-queens-state state)))
-			(put-queen! state-copy lin pos)
-			state-copy))
-
-(defun free-line? (state line)
-	;(format t "free-line? ~D~%" line) 
-	(null (svref (queens-state-ocupied-lines state) line)))
-
-(defun free-column? (state column)
-	;(format t "free-column? ~D" column)
-	(null (svref (queens-state-ocupied-columns state) column)))
-
-(defun free-diagonal? (state line column)
-	;(format t "free-diagonal? ~D ~D~%" line column)
-		(dolist (pos (queens-state-positions state))
-			(let ((l (first pos))
-				  (c (second pos)))
-				;(format t "|dif lines| = ~D  == |dif cols| = ~D" (abs (- l line)) (abs (- c column)))
-				(when (= (abs (- l line))
-			 	 	     (abs (- c column)))
-			 	 	  (return-from free-diagonal? nil))))
-			 	 	;(format t "trying next position"))))
-		;(print result)
-		t)
-
-(defun position-x (pos)
-	(first pos))
-
-(defun position-y (pos)
-	(second pos))
-
-(defun create-position (lin col)
-	(list lin col))
-
-(defun equal-positions (pos1 pos2)
-	(and (= (position-x pos1) 
-			(position-x pos2))
-		 (= (position-y pos1) 
-		    (position-y pos2))))
-
-(defun convert-board-to-queens-state(matrix)
-	(let* ((size (array-dimension matrix 0))
-		   (state (empty-queens-state size)))
-		(dotimes (line size)
-			(dotimes (column size)
-				(when (eq (aref matrix line column) t)
-					(put-queen! state line column)
-					(return))))
-		state))
-
-(defun convert-queens-state-to-board(queen-state)
-	(let* ((positions (queens-state-positions queen-state))
-		   (size (queens-state-board-size queen-state))
-		   (result-matrix (make-array (list size size))))
-		(dolist (pos positions)
-			(setf (aref result-matrix (position-x pos) (position-y pos)) t))
-		result-matrix))
-
-; Name: resolve-problema
-; Arguments: initial-state, strategy
-; Return: Bi-dimensional array with the queens position; nil if there is no solution
-; Note:
+;Name: resolve-problema
+;Arguments: square-matrix representing the board and the strategy (a*, ida*, profundidade (dfds), or bfs)
+;Return: square-amtrix with the solution to the problem
+;Side-effects: None
 (defun resolve-problema (initial-state strategy)
 	(let* ((initial-state-transformed (convert-board-to-queens-state initial-state))
 		   (result-state nil)
 		   (transformed-result nil))
 
-		;(print '---------------STARTINGSEARCH--------------)
-		;(print initial-state-transformed)
-		;(print '--------------------------------------------)
-		
-
-		(setf result-state (procura (cria-problema initial-state-transformed (list #'operator) :objectivo? #'objective? :heuristica #'heuristic) strategy))
-		
-		;(print '-------SEARCHFINISHED-------------)
-		(print result-state)
+		(setf result-state (procura (cria-problema initial-state-transformed 
+													(list #'operator) 
+												   	:objectivo? #'objective? 
+												   	:heuristica #'heuristic) 
+												   	strategy))		
+		;(print result-state)
 		(setf result-state (first (last (nth (- (length result-state) 4) result-state))))
-
 		(when (not (null result-state))
 			  (setf transformed-result (convert-queens-state-to-board result-state)))
-
 		transformed-result))
-		
-(defun objective? (state)
-	(= (queens-state-number-placed state) (queens-state-board-size state)))
 
-(defun heuristic (state)
-	(setf state state)
-	1)
 
-(defun gen-rotated-positions (pos size)
-	(labels ((rotate-position-left! (pos board-size)
-		(let ((lin (position-x pos))
-		  	  (col (position-y pos)))
-				(setf pos (create-position (- (- board-size 1) col) lin)))))
-	
-	(let ((result (list pos))
-		  (copy-pos (create-position (position-x pos) (position-y pos))))
-		(dotimes (n 3)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; AUXILIARY FUNCIONS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;Name: queens-state
+;Description:
+; number-placed: number of queens placed on the board
+; positions: array with n positions for each row of the board. The content
+;            represents the column in wich a queen was placed.
+; ocupied-columns: array with n positions for each column of the board. The content
+;				   is t if a queen was placed in that column. nil if not.
+;
+; Notes: The first element optimizes the objective? funcion by avoiding counting the
+;        the number of non-nil elements in the positions/ocupied-columns array
+;        The second element represents a compacted version of the board
+;        The third element optimizes the free-column? function by avoiding iterating
+;        over the positions array
+;
+(defstruct queens-state number-placed positions ocupied-columns)
+
+;Name: empty-queens-state
+;Arguments: size of the square board 
+;Return: empty queens-state representing an empty board
+;Side-effects: None
+(defun empty-queens-state (size)
+	(make-queens-state 	:number-placed 0
+					 	:positions (make-array size)
+					 	:ocupied-columns (make-array size)))
+
+;Name: make-copy-queens-state
+;Arguments: queens-state structure 
+;Return: copy of the queens-state received as argument
+;Side-effects: None
+(defun make-copy-queens-state (state)
+	(make-queens-state 	:number-placed (queens-state-number-placed state)
+					 	:positions (copy-array (queens-state-positions state))
+					 	:ocupied-columns (copy-array (queens-state-ocupied-columns state))))
+
+;Name: put-queen!
+;Arguments: queens-state structure and the row and column where the queen will be placed
+;Return: None
+;Side-effects: Changes the board by putting a queen in position row col
+(defun put-queen! (state row col)
+		(setf (aref (queens-state-positions state) row) col)
+		(setf (aref (queens-state-ocupied-columns state) col) t)
+		(incf (queens-state-number-placed state)))
+
+;Name: result-of-move
+;Arguments: queens-state structure and the row and column where the queen will be placed
+;Return: A copy of the queens-state with the queen placed in position row col
+;Side-effects: None
+(defun result-of-move (state row col)
+	(let ((state-copy (make-copy-queens-state state)))
+			(put-queen! state-copy row col)
+			state-copy))
+
+;Name: free-row?
+;Arguments: queens-state structure and the row
+;Return: t if there is no queen in the same row. nil if not.
+;Side-effects: None
+(defun free-row? (state row)
+	(null (aref (queens-state-positions state) row)))
+
+;Name: free-column?
+;Arguments: queens-state structure and the column
+;Return: t if there is no queen in the same column. nil if not.
+;Side-effects: None
+(defun free-column? (state column)
+	(null (aref (queens-state-ocupied-columns state) column)))
+
+;Name: free-diagonal?
+;Arguments: queens-state structure, the row and the column of the position
+;Return: t if there is no queen in the same diagonals. nil if not.
+;Side-effects: None
+(defun free-diagonal? (state row column)
+	(let ((positions (queens-state-positions state)))
+		(dotimes (r (array-dimension positions 0))
+			(let ((c (aref positions r)))
+				(when (and (not (null c))
+						   (= (abs (- r row))
+			 	 	     	  (abs (- c column)))
+			 	 	  (return-from free-diagonal? nil))))))
+		t)
+
+;Name: free?
+;Arguments: queens-state structure, the row and the column of the position
+;Return: t if the position causes no conflict with the other queens. nil if not.
+;Side-effects: None
+(defun free? (state r c)
+	(and (free-row? state r)
+		 (free-column? state c)
+		 (free-diagonal? state r c)))
+
+
+;Name: convert-board-to-queens-state
+;Arguments: square-matrix describing the board
+;Return: queens-state representing the board
+;Side-effects: None
+(defun convert-board-to-queens-state(board-matrix)
+	(let* ((size (array-dimension board-matrix 0))
+		   (state (empty-queens-state size)))
+		(dotimes (row size)
+			(dotimes (column size)
+				(when (eq (aref board-matrix row column) t)
+					(put-queen! state row column)
+					(return))))
+		state))
+
+;Name: convert-queens-state-to-board
+;Arguments: queens-state
+;Return: square-matrix representing the queens-state
+;Side-effects: None
+(defun convert-queens-state-to-board(queen-state)
+	(let* ((positions (queens-state-positions queen-state))
+		   (size (array-dimension positions 0))
+		   (result-board-matrix (make-array (list size size))))
+		(dotimes (r size)
+			(setf (aref result-board-matrix r (aref positions r)) t))
+		result-board-matrix))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; OPERATORS FOR MANIPULATING POSITIONS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;Name: create-position
+;Arguments: row and column 
+;Return: a pair (row . column)
+;Side-effects: None
+(defun create-position (row col)
+	(cons row col))
+
+;Name: generate-rotated-positions 
+;Arguments: position and the size of the board
+;Return: a list of cons representing the positions that are rotations of the position given as argument 
+;        according to the size of the board
+;Side-effects: None
+;
+;Note: For example:  (gen-rotatepositions (create-position 1 0) 3)
+;
+; 0 | 0 | 0          0 | 1 | 0           0 | 0 | 0          0 | 0 | 0
+; 1 | 0 | 0    <=>   0 | 0 | 0     <=>   0 | 0 | 0    <=>   0 | 0 | 1
+; 0 | 0 | 0          0 | 0 | 0           0 | 1 | 0          0 | 0 | 0
+;
+; Would return ((1 . 2) (2 . 1) (1 . 0) (0 . 1))
+;
+; It is done by doing a transpose of the position (row = col and col = row) then a simmetry in the vertical 
+; axis (row = size-of-board - 1 - row).
+;
+(defun generate-rotated-positions (position size)
+	(labels ((rotate-position-left! (position size)
+		(let ((row (car position))
+		  	  (col (cdr position)))
+				(setf position (create-position (- (- size 1) col) row)))))
+
+	(let ((result (cons position (list)))
+		  (copy-pos (create-position (car position) (cdr position))))
+		(dotimes (n-rotations 3)
 			(setf copy-pos (rotate-position-left! copy-pos size))
-			(setf result (append result (list copy-pos))))
+			(setf result (cons copy-pos result)))
 		result)))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; OPERATORS FOR RESOLVE-PROBLEMA ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;Name: operator
+;Arguments: queens-state structure 
+;Return: a list of compatible sucessors
+;Side-effects: None
 (defun operator (state)
-	(let* ((size (queens-state-board-size state))
+	(let* ((size (array-dimension (queens-state-positions state) 0))
 		   (sucessors (list))
 		   (rotated-positions (list)))
 
-		;(print '@@@@-FROM-THIS-STATE)
-		;(print state)
-
-		; only generate half of the lines*col combinations because the results are simmetrical
-		(dotimes (l size)
-			(when (free-line? state l)
+		(dotimes (r size)
+			(when (free-row? state r)
 				  (dotimes (c size)
-					;(print 'here2)
-					;(print state)
-					;(format t "lin ~D  col ~D --- v: ~D ~%" l c (< c (- size l)))
-					(when (and (free-column? state c) (free-diagonal? state l c) (null (member (create-position l c) rotated-positions :test #'equal-positions)))
+				  	(when (and (free-column? state c) 
+							   (free-diagonal? state r c)
+							   (null (member (create-position r c) rotated-positions :test #'equal)))
 						  (progn 
-						  		(setf rotated-positions (append rotated-positions (gen-rotated-positions (create-position l c) size))) 
-						 	 	(setf sucessors (append sucessors (list (result-of-move state l c)))))))
-
+						  		(setf rotated-positions (append rotated-positions (generate-rotated-positions (create-position r c) size)))
+						 	 	(setf sucessors (append sucessors (list (result-of-move state r c)))))))
 				  (return-from operator sucessors)))))
 
 
-
+;Name: objective?
+;Arguments: queens-state structure
+;Return: t if the number of placed queens is equals to the size of the board. nil if not.
+;Side-effects: None
+(defun objective? (state)
+	(= (queens-state-number-placed state) (array-dimension (queens-state-positions state) 0)))
+		
+;Name: heuristic
+;Arguments: queens-state structure
+;Return: a integer representing the value of the heuristic
+;Side-effects: None
+;
+; Notes: Gives more weight to columns that have more free positions and less weight if the corresponding 
+;        row is the last one on the board which means that the chance of finding a solution is less probable. 
+;        Therefore, at the end of each row, we count the number of conflicts found and multiply it by the
+;        number of free-rows. The final result is the product of the weighted sum of the conflicts for each 
+;        rows and the number of free rows, which represents a global measure of the board. A board with more
+;        free rows is better than another board with less free rows.
+(defun heuristic (state)
+  (let* ((heuristic 0)
+         (positions (queens-state-positions state))
+         (size (array-dimension positions 0))
+         (n-free-rows 0))
+    (dotimes (r size)
+    	(let ((n-conflits 0))
+	      	(when (null (aref positions r))
+	        	  (incf n-free-rows)
+	          	(dotimes (c size)
+	            	(when (not (free? state r c))
+	                	  (incf n-conflits))))
+      		(setf heuristic (+ heuristic (* n-free-rows n-conflits)))))
+    (* heuristic n-free-rows)))
