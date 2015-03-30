@@ -9,8 +9,8 @@
 
 
 ;Name: resolve-problema
-;Arguments: square-matrix representing the board and the strategy (a*, ida*, profundidade (dfds), or bfs)
-;Return: square-amtrix with the solution to the problem
+;Arguments: initial-state representing the board and the strategy (a*, ida*, profundidade (dfds), or bfs)
+;Return: square-matrix with the solution to the problem
 ;Side-effects: None
 (defun resolve-problema (initial-state strategy)
 	(let* ((initial-state-transformed (convert-board-to-queens-state initial-state))
