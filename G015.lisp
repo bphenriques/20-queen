@@ -201,7 +201,7 @@
 ;Return: a list of compatible sucessors
 ;Side-effects: None
 ;
-; Notes: In 20-queens a*, iterating over columns first takes up to 15% of the time of iterating over lines 
+; Notes: In 20-queens a*, iterating over columns first takes up to 14% of the time of iterating over lines 
 ; first.
 ;
 ; In Macbook pro retina 13' Mid 2014 i5 2.8GhZ 8Gb Ram Yosemite Allegro free Express Edition 9.0: 
@@ -215,7 +215,7 @@
 ; real time  50.159212 sec (98.16%)
 ; space allocation:
 ;  2,732,072 cons cells, 19,548,432 other bytes, 0 static bytes
-; Page Faults: major: 0 (gc: 2396), minor: 6086 (gc: 2396)42 sec 2 783 068 cons
+; Page Faults: major: 0 (gc: 2396), minor: 6086 (gc: 2396)
 ;
 ; -- Columns first: 
 ; cpu time (non-gc) 6.547281 sec user, 0.003727 sec system
