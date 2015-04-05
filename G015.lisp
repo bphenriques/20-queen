@@ -2,7 +2,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Bruno Alexandre Pires Henriques
 ; 72913 - Instituto Superior Tecnico
-; Procura e Planeamento 2014/2015
+; Procura e Planeamento 2014/2015 - G015
 ; 20-Queens problem
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -13,10 +13,9 @@
 ;Return: square-matrix with the solution to the problem
 ;Side-effects: None
 (defun resolve-problema (initial-state strategy)
-	(let* ((initial-state-transformed (convert-board-to-queens-state initial-state))
-		   (result-state nil)
-		   (transformed-result nil))
-
+	(let ((initial-state-transformed (convert-board-to-queens-state initial-state))
+		  (result-state nil)
+		  (transformed-result nil))
 		(setf result-state (procura (cria-problema initial-state-transformed 
 													(list #'operator)
 												   	:objectivo? #'objective? 
@@ -82,8 +81,8 @@
 ;Side-effects: None
 (defun result-of-move (state row col)
 	(let ((state-copy (make-copy-queens-state state)))
-			(put-queen! state-copy row col)
-			state-copy))
+		(put-queen! state-copy row col)
+		state-copy))
 
 ;Name: free-row?
 ;Arguments: queens-state structure and the row
@@ -179,16 +178,16 @@
 ; axis (row = size-of-board - 1 - row).
 ;
 (defun generate-rotated-positions (position size)
-	(labels ((rotate-position-left! (position size)
+	(labels ((rotate-position-left (position size)
 		(let ((row (car position))
 		  	  (col (cdr position)))
-				(setf position (create-position (- (- size 1) col) row)))))
+			(create-position (- (- size 1) col) row))))
 
 	(let ((result (cons position (list)))
-		  (copy-pos (create-position (car position) (cdr position))))
+		  (rotated-pos position))
 		(dotimes (n-rotations 3)
-			(setf copy-pos (rotate-position-left! copy-pos size))
-			(setf result (cons copy-pos result)))
+			(setf rotated-pos (rotate-position-left rotated-pos size))
+			(setf result (cons rotated-pos result)))
 		result)))
 
 
@@ -211,19 +210,20 @@
 ;
 ; Therefore, the final solution iterates over columns first. 
 (defun operator (state)
-	(let* ((size (array-dimension (queens-state-positions state) 0))
-		   (sucessors (list))
-		   (rotated-positions (list)))
-
+	(let ((size (array-dimension (queens-state-positions state) 0))
+		  (sucessors (list))
+		  (rotated-positions (list)))
 		(dotimes (c size)
 			(when (free-column? state c)
 				  (dotimes (r size)
-				  	(when (and (free-row? state r) 
+				  	(when (and (free-row? state r)
 							   (free-diagonal? state r c)
+							   ;avoid generating sucessors for rotated (therefore equivalent) boards
 							   (null (member (create-position r c) rotated-positions :test #'equal)))
 						  (progn 
 						  		(setf rotated-positions (append rotated-positions (generate-rotated-positions (create-position r c) size)))
 						 	 	(setf sucessors (append sucessors (list (result-of-move state r c)))))))
+				  ;the board is filled column by column. Return after iterating all lines.
 				  (return-from operator sucessors)))))
 
 
