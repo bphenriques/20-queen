@@ -201,15 +201,24 @@
 ;Arguments: queens-state structure 
 ;Return: a list of compatible sucessors
 ;Side-effects: None
+;
+; Notes: In 20-queens, iterating over columns first takes up to 15% of the time of iterating over lines 
+; first.
+;
+; In Macbook pro retina 13' Mid 2014 i5 2.8GhZ 8Gb Ram Yosemite Allegro free Express Edition 9.0: 
+; Lines first: 42 sec 2 783 068 cons
+; Columns first: 6.5 sec 876 852 cons
+;
+; Therefore, the final solution iterates over columns first. 
 (defun operator (state)
 	(let* ((size (array-dimension (queens-state-positions state) 0))
 		   (sucessors (list))
 		   (rotated-positions (list)))
 
-		(dotimes (r size)
-			(when (free-row? state r)
-				  (dotimes (c size)
-				  	(when (and (free-column? state c) 
+		(dotimes (c size)
+			(when (free-column? state c)
+				  (dotimes (r size)
+				  	(when (and (free-row? state r) 
 							   (free-diagonal? state r c)
 							   (null (member (create-position r c) rotated-positions :test #'equal)))
 						  (progn 
