@@ -205,8 +205,26 @@
 ; first.
 ;
 ; In Macbook pro retina 13' Mid 2014 i5 2.8GhZ 8Gb Ram Yosemite Allegro free Express Edition 9.0: 
-; Lines first: 42 sec 2 783 068 cons
-; Columns first: 6.5 sec 876 852 cons
+;
+; ; CL-USER(3):(time (resolve-problema (make-array '(20 20)) "a*"))
+;
+; -- Lines first: 
+; cpu time (non-gc) 48.677416 sec user, 0.165540 sec system
+; cpu time (gc)     0.387520 sec user, 0.004711 sec system
+; cpu time (total)  49.064936 sec user, 0.170251 sec system
+; real time  50.159212 sec (98.16%)
+; space allocation:
+;  2,732,072 cons cells, 19,548,432 other bytes, 0 static bytes
+; Page Faults: major: 0 (gc: 2396), minor: 6086 (gc: 2396)42 sec 2 783 068 cons
+;
+; -- Columns first: 
+; cpu time (non-gc) 6.547281 sec user, 0.003727 sec system
+; cpu time (gc)     0.020829 sec user, 0.000023 sec system
+; cpu time (total)  6.568110 sec user, 0.003750 sec system
+; real time  6.574100 sec (99.97%)
+; space allocation:
+;  861,297 cons cells, 5,975,096 other bytes, 0 static bytes
+; Page Faults: major: 0 (gc: 0), minor: 0 (gc: 0)
 ;
 ; Therefore, the final solution iterates over columns first. 
 (defun operator (state)
