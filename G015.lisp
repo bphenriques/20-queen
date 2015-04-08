@@ -1,4 +1,3 @@
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Bruno Alexandre Pires Henriques
 ; 72913 - Instituto Superior Tecnico
@@ -6,7 +5,7 @@
 ; 20-Queens problem
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
+(in-package :user)
 
 ;Name: resolve-problema
 ;Arguments: initial-state representing the board and the strategy (a*, ida*, profundidade (dfds), or bfs)
